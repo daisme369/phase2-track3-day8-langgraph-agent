@@ -23,6 +23,7 @@ dev = [
   "ruff>=0.5.0",
   "mypy>=1.10",
 ]
+ui = ["streamlit>=1.35"]
 sqlite = ["langgraph-checkpoint-sqlite>=2.0"]
 postgres = ["langgraph-checkpoint-postgres>=2.0"]
 

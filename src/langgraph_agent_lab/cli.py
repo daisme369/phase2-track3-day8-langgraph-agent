@@ -19,6 +19,16 @@ from .state import initial_state
 app = typer.Typer(no_args_is_help=True)
 
 
+def _write_graph_diagram(graph: object, output_path: str | Path) -> None:
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        mermaid = graph.get_graph().draw_mermaid()
+    except Exception as exc:
+        raise RuntimeError("Failed to export graph diagram as mermaid") from exc
+    path.write_text(mermaid, encoding="utf-8")
+
+
 @app.command("run-scenarios")
 def run_scenarios(
     config: Annotated[Path, typer.Option("--config")],
@@ -29,17 +39,38 @@ def run_scenarios(
     scenarios = load_scenarios(cfg["scenarios_path"])
     checkpointer = build_checkpointer(cfg.get("checkpointer", "memory"), cfg.get("database_url"))
     graph = build_graph(checkpointer=checkpointer)
+    if cfg.get("graph_diagram_path"):
+        _write_graph_diagram(graph, cfg["graph_diagram_path"])
     metrics = []
     for scenario in scenarios:
         state = initial_state(scenario)
         run_config = {"configurable": {"thread_id": state["thread_id"]}}
         final_state = graph.invoke(state, config=run_config)
-        metrics.append(metric_from_state(final_state, scenario.expected_route.value, scenario.requires_approval))
+        metrics.append(
+            metric_from_state(
+                final_state,
+                scenario.expected_route.value,
+                scenario.requires_approval,
+            )
+        )
     report = summarize_metrics(metrics)
     write_metrics(report, output)
     if cfg.get("report_path"):
         write_report(report, cfg["report_path"])
     typer.echo(f"Wrote metrics to {output}")
+
+
+@app.command("export-diagram")
+def export_diagram(
+    output: Annotated[Path, typer.Option("--output")],
+    checkpointer: Annotated[str, typer.Option("--checkpointer")] = "none",
+    database_url: Annotated[str | None, typer.Option("--database-url")] = None,
+) -> None:
+    """Export graph architecture as Mermaid text."""
+    saver = build_checkpointer(checkpointer, database_url)
+    graph = build_graph(checkpointer=saver)
+    _write_graph_diagram(graph, output)
+    typer.echo(f"Wrote mermaid diagram to {output}")
 
 
 @app.command("validate-metrics")

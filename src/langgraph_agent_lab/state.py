@@ -6,9 +6,9 @@ Students should extend the schema only when needed. Keep state lean and serializ
 from __future__ import annotations
 
 from enum import StrEnum
+from operator import add
 from typing import Annotated, Any, TypedDict
 
-from operator import add
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -33,25 +33,30 @@ class LabEvent(BaseModel):
 
 
 class ApprovalDecision(BaseModel):
-    approved: bool = False
+    status: str = "approved"
+    approved: bool = True
     reviewer: str = "mock-reviewer"
     comment: str = ""
+    edited_action: str | None = None
+    escalated: bool = False
 
 
 class AgentState(TypedDict, total=False):
     """LangGraph state.
 
-    TODO(student): decide which fields should be append-only and which should be overwritten.
-    The current annotations give a safe starting point for auditability.
+    Append-only fields (`messages`, `tool_results`, `errors`, `events`) keep audit history while
+    routing and control fields are overwritten with the latest decision.
     """
 
     thread_id: str
     scenario_id: str
     query: str
+    query_metadata: dict[str, Any] | None
     route: str
     risk_level: str
     attempt: int
     max_attempts: int
+    backoff_seconds: int
     final_answer: str | None
     pending_question: str | None
     proposed_action: str | None
@@ -86,10 +91,12 @@ def initial_state(scenario: Scenario) -> AgentState:
         "thread_id": f"thread-{scenario.id}",
         "scenario_id": scenario.id,
         "query": scenario.query,
+        "query_metadata": None,
         "route": "",
         "risk_level": "unknown",
         "attempt": 0,
         "max_attempts": scenario.max_attempts,
+        "backoff_seconds": 0,
         "final_answer": None,
         "pending_question": None,
         "proposed_action": None,
@@ -104,4 +111,9 @@ def initial_state(scenario: Scenario) -> AgentState:
 
 def make_event(node: str, event_type: str, message: str, **metadata: Any) -> dict[str, Any]:
     """Create a normalized event payload."""
-    return LabEvent(node=node, event_type=event_type, message=message, metadata=metadata).model_dump()
+    return LabEvent(
+        node=node,
+        event_type=event_type,
+        message=message,
+        metadata=metadata,
+    ).model_dump()

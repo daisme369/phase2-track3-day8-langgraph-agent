@@ -6,11 +6,14 @@ def test_route_after_classify():
     assert route_after_classify({"route": Route.SIMPLE.value}) == "answer"
     assert route_after_classify({"route": Route.TOOL.value}) == "tool"
     assert route_after_classify({"route": Route.RISKY.value}) == "risky_action"
+    assert route_after_classify({"route": "unknown-route"}) == "clarify"
 
 
 def test_route_after_approval():
     assert route_after_approval({"approval": {"approved": True}}) == "tool"
     assert route_after_approval({"approval": {"approved": False}}) == "clarify"
+    assert route_after_approval({"approval": {"status": "edited", "approved": True}}) == "tool"
+    assert route_after_approval({"approval": {"status": "timeout", "approved": False}}) == "clarify"
 
 
 def test_route_after_retry_bound():
@@ -21,3 +24,4 @@ def test_route_after_retry_bound():
 def test_route_after_evaluate():
     assert route_after_evaluate({"evaluation_result": "success"}) == "answer"
     assert route_after_evaluate({"evaluation_result": "needs_retry"}) == "retry"
+    assert route_after_evaluate({"evaluation_result": "dead_letter"}) == "dead_letter"

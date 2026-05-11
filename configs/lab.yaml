@@ -1,3 +1,4 @@
 scenarios_path: data/sample/scenarios.jsonl
 checkpointer: memory
+graph_diagram_path: outputs/graph.mmd
 report_path: reports/lab_report.md

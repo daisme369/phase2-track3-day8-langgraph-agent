@@ -182,6 +182,29 @@ Pick one or more:
 
 ---
 
+## Streamlit audit UI (bonus)
+
+You can run a basic frontend to inspect audit logs and control mock HITL decisions
+with button options (`APPROVE`, `REJECT`, `EDIT`, `TIMEOUT`).
+
+```bash
+# Install UI dependency
+pip install -e '.[ui]'
+
+# Run Streamlit app
+streamlit run src/langgraph_agent_lab/streamlit_app.py
+```
+
+### What you can do in the UI
+
+- Pick a scenario or enter a custom query
+- Preview the predicted route before execution
+- Use HITL decision buttons to choose approval mode for risky cases
+- Add a decision note and review an in-UI decision log table
+- Inspect `events`, `tool_results`, and `errors` after each run
+
+---
+
 ## Submission checklist
 
 - [ ] All `TODO(student)` sections completed
@@ -198,6 +221,7 @@ Pick one or more:
 ---
 
 ## Common pitfalls
+
 
 1. **Keyword conflicts**: "Check order status" contains both "check" (tool) and "order" (tool). Test priority carefully — risky keywords should take precedence over tool keywords.
 
